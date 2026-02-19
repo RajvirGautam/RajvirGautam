@@ -11,12 +11,12 @@
 
 ---
 
-## 🧑‍💻 About Me
+## About Me
 
-- 🎓 **UG 3rd Year** @ SGSITS Indore (E&I Dept.) — graduating 2027
-- 🛒 Built **Campus Marketplace** — full MERN stack P2P marketplace for college students
-- 📱 Built **Crypto Price Tracker** — native Android widget with 1s live Binance API updates
-- 🏆 **Main Student Coordinator** — AAROHAN 2025, SGSITS Inaugural TechFest (3,000+ participants)
+- **UG 3rd Year** @ SGSITS Indore (E&I Dept.) — graduating 2027
+-  Built **Campus Marketplace** — full MERN stack P2P marketplace for college students
+-  Built **Crypto Price Tracker** — native Android widget with 1s live Binance API updates
+-  **Main Student Coordinator** — AAROHAN 2025, SGSITS Inaugural TechFest (3,000+ participants)
 
 ---
 
