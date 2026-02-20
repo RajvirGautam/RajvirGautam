@@ -2,12 +2,14 @@
 
 <div align="center">
 
-### UG 3rd Yr · Electronics & Instrumentation Engg · SGSITS Indore · 2027
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&size=16&pause=1000&color=58A6FF&center=true&vCenter=true&width=500&lines=Electronics+%26+Instrumentation+%40+SGSITS;Full-Stack+Dev+%7C+Android+Builder;MERN+%7C+Kotlin+%7C+SGSITS+Indore+%2727)](https://git.io/typing-svg)
 
-[![Portfolio](https://img.shields.io/badge/GitHub-RajvirGautam-181717?style=for-the-badge&logo=github)](https://github.com/RajvirGautam)
-[![Email](https://img.shields.io/badge/Email-rajvirgautam8855%40gmail.com-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:rajvirgautam8855@gmail.com)
+<br>
+
+[![GitHub](https://img.shields.io/badge/GitHub-RajvirGautam-58A6FF?style=flat-square&logo=github)](https://github.com/RajvirGautam) &nbsp; [![Email](https://img.shields.io/badge/Email-rajvirgautam8855-58A6FF?style=flat-square&logo=gmail)](mailto:rajvirgautam8855@gmail.com)
 
 </div>
+
 
 ---
 
