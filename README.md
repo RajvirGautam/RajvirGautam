@@ -1,13 +1,16 @@
 # Hi there, I'm Rajvir Gautam 👋
+
+
 <div align="center">
 
-*UG 3rd Yr · Electronics & Instrumentation · SGSITS Indore · 2027*
+*Electronics & Instrumentation · SGSITS Indore · 2027*
 
 <br>
 
-<a href="https://github.com/RajvirGautam"><img src="https://img.shields.io/badge/-GitHub-0d1117?style=for-the-badge&logo=github&logoColor=white&labelColor=0d1117" /></a> &nbsp; <a href="mailto:rajvirgautam8855@gmail.com"><img src="https://img.shields.io/badge/-Gmail-0d1117?style=for-the-badge&logo=gmail&logoColor=white&labelColor=0d1117" /></a>
+[![GitHub](https://img.shields.io/badge/-%40RajvirGautam-black?style=flat&logo=github)](https://github.com/RajvirGautam) &nbsp; [![Email](https://img.shields.io/badge/-rajvirgautam8855%40gmail.com-black?style=flat&logo=gmail)](mailto:rajvirgautam8855@gmail.com)
 
 </div>
+
 
 
 
