@@ -2,7 +2,7 @@
 
 <div align="center">
 
-### Electronics & Instrumentation · SGSITS Indore · RGPV · 2027
+### UG 3rd Yr · Electronics & Instrumentation Engg · SGSITS Indore · 2027
 
 [![Portfolio](https://img.shields.io/badge/GitHub-RajvirGautam-181717?style=for-the-badge&logo=github)](https://github.com/RajvirGautam)
 [![Email](https://img.shields.io/badge/Email-rajvirgautam8855%40gmail.com-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:rajvirgautam8855@gmail.com)
