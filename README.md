@@ -3,7 +3,7 @@
 
 <div align="center">
 
-*Electronics & Instrumentation · SGSITS Indore · 2027*
+### UG 3rd Yr · Electronics & Instrumentation Engg · SGSITS Indore · 2027
 
 <br>
 
