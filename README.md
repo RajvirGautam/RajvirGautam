@@ -1,14 +1,14 @@
 # Hi there, I'm Rajvir Gautam 👋
-
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&size=16&pause=1000&color=58A6FF&center=true&vCenter=true&width=500&lines=Electronics+%26+Instrumentation+%40+SGSITS;Full-Stack+Dev+%7C+Android+Builder;MERN+%7C+Kotlin+%7C+SGSITS+Indore+%2727)](https://git.io/typing-svg)
+*UG 3rd Yr · Electronics & Instrumentation · SGSITS Indore · 2027*
 
 <br>
 
-[![GitHub](https://img.shields.io/badge/GitHub-RajvirGautam-58A6FF?style=flat-square&logo=github)](https://github.com/RajvirGautam) &nbsp; [![Email](https://img.shields.io/badge/Email-rajvirgautam8855-58A6FF?style=flat-square&logo=gmail)](mailto:rajvirgautam8855@gmail.com)
+<a href="https://github.com/RajvirGautam"><img src="https://img.shields.io/badge/-GitHub-0d1117?style=for-the-badge&logo=github&logoColor=white&labelColor=0d1117" /></a> &nbsp; <a href="mailto:rajvirgautam8855@gmail.com"><img src="https://img.shields.io/badge/-Gmail-0d1117?style=for-the-badge&logo=gmail&logoColor=white&labelColor=0d1117" /></a>
 
 </div>
+
 
 
 ---
