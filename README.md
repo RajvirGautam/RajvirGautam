@@ -63,7 +63,6 @@
 
 ---
 
-## 🐍 My Contributions
 
 <div align="center">
 
