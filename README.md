@@ -20,7 +20,7 @@
 
 ---
 
-## 🚀 Tech Stack
+## Tech Stack
 
 **Languages**
 
@@ -46,7 +46,7 @@
 
 ---
 
-## 📊 GitHub Stats
+## Some Stats
 
 <div align="center">
 
