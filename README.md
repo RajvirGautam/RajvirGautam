@@ -12,8 +12,6 @@
 </div>
 
 
-
-
 ---
 
 ## About Me
@@ -62,7 +60,8 @@
 
 <div align="center">
 
-<img src="https://github-readme-streak-stats.herokuapp.com/?user=RajvirGautam&theme=tokyonight&hide_border=true" />
+<!-- FIXED: switched to demolab + added IST timezone to fix 2-day lag -->
+<img src="https://streak-stats.demolab.com/?user=RajvirGautam&theme=tokyonight&hide_border=true&timezone=Asia%2FKolkata" />
 
 </div>
 
