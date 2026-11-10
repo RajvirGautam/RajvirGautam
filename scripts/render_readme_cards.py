@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FONTS = ROOT / "fonts"
 OUT = ROOT / "cards"
 STATIC = os.environ.get("STATIC") == "1"
+GRAPH_START_MONTH = 2  # contribution graph starts on Feb 1 of the current year
 
 # ── palette ───────────────────────────────────────────────────────────────
 PAPER = "#F4F0E6"
@@ -25,6 +26,24 @@ MUTED = "#6E685C"
 BLUE = "#2B59FF"
 RED = "#EF4136"
 YELLOW = "#F6B62B"
+GRAPH = ["#C7D3FF", "#8DA6FF", "#557BFF", "#2B59FF"]
+EMPTY_OP = ".07"
+BORDER_OP = ".1"
+
+THEMES = {
+    "light": dict(PAPER="#F4F0E6", PAPER2="#EBE5D6", INK="#16140F", MUTED="#6E685C",
+                  BLUE="#2B59FF", RED="#EF4136", YELLOW="#F6B62B",
+                  GRAPH=["#C7D3FF", "#8DA6FF", "#557BFF", "#2B59FF"], EMPTY_OP=".07", BORDER_OP=".1",
+                  TILES={"blue": ("#2B59FF", "#F7F4EC", "#F7F4EC"), "red": ("#EF4136", "#F7F4EC", "#F7F4EC"),
+                         "yellow": ("#F6B62B", "#16140F", "#16140F")}, SHINE_OP=".28", TILE_BORDER=False),
+    # GitHub-dark friendly: card sits one step above #0d1117, warm off-white ink, brighter accents
+    "dark": dict(PAPER="#12171F", PAPER2="#1B222C", INK="#EDE8DC", MUTED="#8D96A3",
+                 BLUE="#5B82FF", RED="#F25A4F", YELLOW="#F7C04A",
+                 GRAPH=["#1D2C5E", "#2B48A8", "#4167F0", "#7B9BFF"], EMPTY_OP=".07", BORDER_OP=".12",
+                 # dimmed: the light-mode colours, deepened so they don't glare on #0d1117
+                 TILES={"blue": ("#2341B0", "#D9E0F7", "#FFFFFF"), "red": ("#A8352C", "#F2DAD7", "#FFFFFF"),
+                        "yellow": ("#B88A26", "#1A160D", "#1A160D")}, SHINE_OP=".12", TILE_BORDER=False),
+}
 
 SERIF, SANS, SANS_MED, MONO = "Instrument Serif", "Geist", "GeistMed", "Geist Mono"
 GLYPHS = string.printable + "→↗↑●·—’•"
@@ -87,10 +106,11 @@ def esc(s):
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def svg(w, h, body, fonts, css="", title="", bg=PAPER, radius=18, border=True):
+def svg(w, h, body, fonts, css="", title="", bg=None, radius=18, border=True):
+    bg = bg or PAPER
     faces = "".join(font_face(f) for f in fonts)
     static = "*{animation:none!important}" if STATIC else ""
-    stroke = f' stroke="{INK}" stroke-opacity=".1"' if border else ""
+    stroke = f' stroke="{INK}" stroke-opacity="{BORDER_OP}"' if border else ""
     doc = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img" aria-label="{esc(title)}">
 <title>{esc(title)}</title>
 <style>{faces}{BASE_CSS}{css}{static}</style>
@@ -232,38 +252,43 @@ def level(c, qs):
 
 
 def graph():
-    W, H = 880, 244
-    nz = sorted(c for _, c in DAYS if c)
+    """Contribution graph from GRAPH_START_MONTH of the current year → today."""
+    year = DAYS[-1][0].year
+    start = dt.date(year, GRAPH_START_MONTH, 1)
+    days = [(day, c) for day, c in DAYS if day >= start]
+    total = sum(c for _, c in days)
+    W, x0, x1, y0 = 880, 44, 836, 92
+    offset = (days[0][0].weekday() + 1) % 7  # Sunday-first rows
+    cols = math.ceil((len(days) + offset) / 7)
+    step = min(22.0, (x1 - x0) / cols)
+    cell = round(step * 0.8, 1)
+    H = int(y0 + 7 * step + 52)
+    nz = sorted(c for _, c in days if c)
     qs = [nz[int(len(nz) * p)] for p in (0.25, 0.5, 0.75)] if nz else [1, 2, 3]
-    colors = [f"{INK}", "#C7D3FF", "#8DA6FF", "#557BFF", BLUE]
-    cell, gap, x0, y0 = 12, 3, 44, 92
-    offset = (DAYS[0][0].weekday() + 1) % 7  # Sunday-first rows
-    parts = [f'<text x="40" y="54" class="serif rise" font-size="30" fill="{INK}">{TOTAL:,} contributions'
-             f'<tspan fill="{MUTED}"> in the last year</tspan></text>',
+    colors = [INK] + GRAPH
+    parts = [f'<text x="40" y="54" class="serif rise" font-size="30" fill="{INK}">{total:,} contributions'
+             f'<tspan fill="{MUTED}"> since {start:%B}</tspan></text>',
              f'<text x="836" y="52" text-anchor="end" class="mono fade" font-size="11" letter-spacing="1.4" fill="{MUTED}">'
-             + f'{DAYS[0][0]:%b %Y} → {DAYS[-1][0]:%b %Y}'.upper() + "</text>"]
-    last_month = None
+             + f'{days[0][0]:%b %Y} → {days[-1][0]:%b %Y}'.upper() + "</text>"]
     cells = []
-    for i, (day, c) in enumerate(DAYS):
+    for i, (day, c) in enumerate(days):
         col, row = divmod(i + offset, 7)
-        x, y = x0 + col * (cell + gap), y0 + row * (cell + gap)
+        x, y = x0 + col * step, y0 + row * step
         lv = level(c, qs)
-        op = ' fill-opacity=".07"' if lv == 0 else ""
-        cells.append(f'<rect x="{x}" y="{y}" width="{cell}" height="{cell}" rx="3" fill="{colors[lv]}"{op} '
-                     f'class="pop" style="{d(0.3 + col * 0.022 + row * 0.012)}"><title>{c} on {day:%b %d}</title></rect>')
-        if day.day <= 7 and day.month != last_month and row == 0 or (i == 0):
-            if day.month != last_month:
-                parts.append(f'<text x="{x}" y="{y0 - 10}" class="mono fade" font-size="10" fill="{MUTED}" style="{d(0.3)}">{day:%b}</text>')
-                last_month = day.month
+        op = f' fill-opacity="{EMPTY_OP}"' if lv == 0 else ""
+        cells.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{cell}" height="{cell}" rx="3.5" fill="{colors[lv]}"{op} '
+                     f'class="pop" style="{d(0.3 + col * 0.025 + row * 0.012)}"><title>{c} on {day:%b %d}</title></rect>')
+        if day.day == 1:
+            parts.append(f'<text x="{x0 + (col + (1 if row else 0)) * step:.1f}" y="{y0 - 12}" class="mono fade" font-size="10.5" '
+                         f'fill="{MUTED}" style="{d(0.3)}">{day:%b}</text>')
     parts.extend(cells)
-    # legend
     lx = 836 - 5 * 15 - 36
     parts.append(f'<text x="{lx - 8}" y="{H - 18}" text-anchor="end" class="mono" font-size="10" fill="{MUTED}">less</text>')
     for k, col in enumerate(colors):
-        op = ' fill-opacity=".07"' if k == 0 else ""
+        op = f' fill-opacity="{EMPTY_OP}"' if k == 0 else ""
         parts.append(f'<rect x="{lx + k * 15}" y="{H - 28}" width="11" height="11" rx="3" fill="{col}"{op}/>')
     parts.append(f'<text x="{lx + 5 * 15 + 4}" y="{H - 18}" class="mono" font-size="10" fill="{MUTED}">more</text>')
-    return svg(W, H, "\n".join(parts), [SERIF, MONO], title=f"{TOTAL} contributions in the last year")
+    return svg(W, H, "\n".join(parts), [SERIF, MONO], title=f"{total} contributions since {start:%B %Y}")
 
 
 # ── 3. monthly activity ───────────────────────────────────────────────────
@@ -327,7 +352,8 @@ def count_up(x, y, target, fmt, begin, size, fill, frames=18, step=0.055):
     return "".join(out)
 
 
-def tile(idx, word, bg, fg, target, fmt, caption, delay):
+def tile(idx, word, key, target, fmt, caption, delay):
+    bg, fg, accent = TILES[key]
     W, H = 286, 300
     css = f"""@keyframes swing{{0%{{opacity:0;transform:translateY(90px) rotate(7deg)}}65%{{opacity:1;transform:translateY(-8px) rotate(-1.5deg)}}100%{{opacity:1;transform:none}}}}
 .swing{{transform-box:view-box;transform-origin:50% 100%;animation:swing 1.1s cubic-bezier(.2,.8,.2,1) both}}
@@ -335,20 +361,20 @@ def tile(idx, word, bg, fg, target, fmt, caption, delay):
 .ring{{opacity:0;transform-box:fill-box;transform-origin:center;animation:ring 3s ease-out infinite}}"""
     parts = [f'<g class="swing" style="{d(delay)}">',
              f'<rect width="{W}" height="{H}" fill="{bg}"/>',
-             f'<circle cx="{W}" cy="0" r="150" fill="none" stroke="{fg}" stroke-width="1.5" class="ring" style="{d(delay + 0.8)}"/>',
-             f'<circle cx="{W}" cy="0" r="150" fill="none" stroke="{fg}" stroke-width="1.5" class="ring" style="{d(delay + 2.3)}"/>',
+             f'<circle cx="{W}" cy="0" r="150" fill="none" stroke="{accent}" stroke-width="1.5" class="ring" style="{d(delay + 0.8)}"/>',
+             f'<circle cx="{W}" cy="0" r="150" fill="none" stroke="{accent}" stroke-width="1.5" class="ring" style="{d(delay + 2.3)}"/>',
              f'<text x="26" y="44" class="mono" font-size="12" letter-spacing="2" fill="{fg}" fill-opacity=".75">{idx} / {word}</text>',
-             count_up(22, 162, target, fmt, delay + 0.6, 84, fg)]
+             count_up(22, 162, target, fmt, delay + 0.6, 84, accent)]
     for k, line in enumerate(wrap(caption, 15, W - 56)):
         parts.append(f'<text x="26" y="{206 + k * 21}" class="sans" font-size="15" fill="{fg}" fill-opacity=".85">{esc(line)}</text>')
-    parts.append(f'<g class="nudge"><text x="{W - 26}" y="{H - 24}" text-anchor="end" class="sans" font-size="26" fill="{fg}">↗</text></g>')
+    parts.append(f'<g class="nudge"><text x="{W - 26}" y="{H - 24}" text-anchor="end" class="sans" font-size="26" fill="{accent}">↗</text></g>')
     # sweeping shine
     parts.append(f"""<defs><linearGradient id="sh" x1="0" y1="0" x2="1" y2="0">
-<stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+<stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity="{SHINE_OP}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
 <rect x="-160" y="-60" width="110" height="{H + 120}" fill="url(#sh)" transform="rotate(18)">
 <animate attributeName="x" values="-260;-260;{W + 120}" keyTimes="0;.7;1" dur="5.5s" begin="{delay + 1.5}s" repeatCount="indefinite"/></rect>""")
     parts.append("</g>")
-    return svg(W, H, "\n".join(parts), [SERIF, SANS, MONO], css, f"{word}: {fmt(target)}", bg=bg, border=False)
+    return svg(W, H, "\n".join(parts), [SERIF, SANS, MONO], css, f"{word}: {fmt(target)}", bg=bg, border=TILE_BORDER)
 
 
 # ── 5. toolbox ────────────────────────────────────────────────────────────
@@ -382,14 +408,15 @@ def toolbox():
 
 # ── 6. repo cards ─────────────────────────────────────────────────────────
 REPOS = [
-    ("GS-Marketplace", "Campus Marketplace", "A student-only P2P marketplace to buy, sell and rent on campus. Full MERN stack.", "JavaScript", "#F1E05A", BLUE),
-    ("Crypto-Futures-Tracker", "CryptoStatus", "Turns your Android status bar into a live crypto ticker, updating every second from Binance.", "Kotlin", "#A97BFF", RED),
-    ("Credex", "RightSize", "Audit your startup's AI spend across 8 vendors (Cursor, Copilot, ChatGPT, Claude...) in one view.", "TypeScript", "#3178C6", YELLOW),
-    ("Careerflow", "Careerflow", "An AI-powered job application tracker with a Kanban board for every stage of the hunt.", "TypeScript", "#3178C6", BLUE),
+    ("GS-Marketplace", "Campus Marketplace", "A student-only P2P marketplace to buy, sell and rent on campus. Full MERN stack.", "JavaScript", "#F1E05A", "BLUE"),
+    ("Crypto-Futures-Tracker", "CryptoStatus", "Turns your Android status bar into a live crypto ticker, updating every second from Binance.", "Kotlin", "#A97BFF", "RED"),
+    ("Credex", "RightSize", "Audit your startup's AI spend across 8 vendors (Cursor, Copilot, ChatGPT, Claude...) in one view.", "TypeScript", "#3178C6", "YELLOW"),
+    ("Careerflow", "Careerflow", "An AI-powered job application tracker with a Kanban board for every stage of the hunt.", "TypeScript", "#3178C6", "BLUE"),
 ]
 
 
 def repo_card(i, slug, name, desc, lang, lang_color, accent):
+    accent = globals()[accent]
     W, H = 432, 196
     delay = 0.2 + (i % 2) * 0.15
     parts = [f'<rect width="{W}" height="5" fill="{accent}" class="fade" style="{d(delay)}"/>',
@@ -406,24 +433,30 @@ def repo_card(i, slug, name, desc, lang, lang_color, accent):
 
 # ── main ──────────────────────────────────────────────────────────────────
 def main():
-    OUT.mkdir(exist_ok=True)
+    for theme, palette in THEMES.items():
+        globals().update(palette)
+        render(OUT if theme == "light" else OUT / "dark")
+
+
+def render(out):
+    out.mkdir(parents=True, exist_ok=True)
     cards = {
         "hero.svg": hero(),
         "graph.svg": graph(),
         "activity.svg": activity(),
-        "build.svg": tile("01", "BUILD", BLUE, PAPER, DATA["public_repos"], str,
+        "build.svg": tile("01", "BUILD", "blue", DATA["public_repos"], str,
                           "public repositories: web apps, Android widgets and everything in between", 0.2),
-        "lead.svg": tile("02", "LEAD", RED, PAPER, 3000, lambda v: f"{v:,}+",
+        "lead.svg": tile("02", "LEAD", "red", 3000, lambda v: f"{v:,}+",
                          "participants at AAROHAN 2025, SGSITS's first techfest. Main student coordinator.", 0.35),
-        "ship.svg": tile("03", "SHIP", YELLOW, INK, TOTAL, lambda v: f"{v:,}",
+        "ship.svg": tile("03", "SHIP", "yellow", TOTAL, lambda v: f"{v:,}",
                          "contributions pushed to GitHub in the last 12 months", 0.5),
         "toolbox.svg": toolbox(),
     }
     for i, r in enumerate(REPOS):
         cards[f"repo-{r[0].lower()}.svg"] = repo_card(i, *r)
     for name, content in cards.items():
-        (OUT / name).write_text(content)
-        print(f"{name:32s} {len(content) / 1024:6.1f} KB")
+        (out / name).write_text(content)
+        print(f"{out.name}/{name:28s} {len(content) / 1024:6.1f} KB")
 
 
 if __name__ == "__main__":
