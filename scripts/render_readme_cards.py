@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 ROOT = Path(__file__).resolve().parent.parent
 FONTS = ROOT / "fonts"
-OUT = ROOT / "cards"
+OUT = Path(os.environ.get("CARDS_OUT", ROOT / "cards"))
 STATIC = os.environ.get("STATIC") == "1"
 GRAPH_START_MONTH = 2  # contribution graph starts on Feb 1 of the current year
 
@@ -35,14 +35,14 @@ THEMES = {
                   BLUE="#2B59FF", RED="#EF4136", YELLOW="#F6B62B",
                   GRAPH=["#C7D3FF", "#8DA6FF", "#557BFF", "#2B59FF"], EMPTY_OP=".07", BORDER_OP=".1",
                   TILES={"blue": ("#2B59FF", "#F7F4EC", "#F7F4EC"), "red": ("#EF4136", "#F7F4EC", "#F7F4EC"),
-                         "yellow": ("#F6B62B", "#16140F", "#16140F")}, SHINE_OP=".28", TILE_BORDER=False),
+                         "yellow": ("#F6B62B", "#16140F", "#16140F")}, SHINE_OP=".28", TILE_BORDER=False, DARK=False),
     # GitHub-dark friendly: card sits one step above #0d1117, warm off-white ink, brighter accents
     "dark": dict(PAPER="#12171F", PAPER2="#1B222C", INK="#EDE8DC", MUTED="#8D96A3",
                  BLUE="#5B82FF", RED="#F25A4F", YELLOW="#F7C04A",
                  GRAPH=["#1D2C5E", "#2B48A8", "#4167F0", "#7B9BFF"], EMPTY_OP=".07", BORDER_OP=".12",
                  # dimmed: the light-mode colours, deepened so they don't glare on #0d1117
                  TILES={"blue": ("#2341B0", "#D9E0F7", "#FFFFFF"), "red": ("#A8352C", "#F2DAD7", "#FFFFFF"),
-                        "yellow": ("#B88A26", "#1A160D", "#1A160D")}, SHINE_OP=".12", TILE_BORDER=False),
+                        "yellow": ("#B88A26", "#1A160D", "#1A160D")}, SHINE_OP=".12", TILE_BORDER=False, DARK=True),
 }
 
 SERIF, SANS, SANS_MED, MONO = "Instrument Serif", "Geist", "GeistMed", "Geist Mono"
@@ -205,14 +205,51 @@ def ascii_monogram(cols, rows, text="RG"):
     return grid
 
 
+def ascii_portrait(data):
+    """Brightness grid -> characters, tones equalised over the subject so the face keeps contrast.
+    Light theme: dark = dense ink. Dark theme: bright = dense."""
+    ramp = " .:-=+*#%@"
+    vals = sorted(v for row in data["grid"] for v in row if v >= 0)
+    rank = {}
+    for i, v in enumerate(vals):
+        rank.setdefault(v, []).append(i)
+    pct = {v: (sum(ix) / len(ix)) / max(1, len(vals) - 1) for v, ix in rank.items()}
+    grid = [row[:] for row in data["grid"]]
+    # mirror the right-hand ending on the left: find the head's centre column, drop everything further
+    # left than the right edge is on the right, and dither-fade the last few columns so it tapers off
+    ncol = len(grid[0])
+    head = [c for row in grid[: len(grid) // 3] for c, v in enumerate(row) if v >= 0]
+    centre = sum(head) / len(head)
+    left = max(0, int(2 * centre - (ncol - 1)))
+    fade = 16
+    for r, row in enumerate(grid):
+        for c in range(min(ncol, left + fade)):
+            keep = (c - left) / fade
+            if c < left or ((r * 7 + c * 13) % 17) / 17 > keep:
+                row[c] = -1
+    rows = []
+    for row in grid:
+        out = []
+        for v in row:
+            if v < 0:
+                out.append(("b", " "))
+                continue
+            t = 0.55 * pct[v] + 0.45 * v / 99  # half equalised, half raw: keeps contrast without flattening the face
+            dens = 0.06 + 0.94 * t if DARK else 0.05 + 0.92 * (1 - t) ** 0.55
+            # tone carried twice: glyph density and opacity (o3..o10) -> near-continuous shading
+            out.append((f"o{max(3, round(dens * 10))}", ramp[min(len(ramp) - 1, int(dens * len(ramp)))]))
+        rows.append(out)
+    return rows
+
+
 def hero():
-    W, H = 880, 340
+    W, H = 880, 360
     parts = []
     # status line with pulsing dot
     parts.append(f'<g class="fade" style="{d(0.1)}">'
-                 f'<circle cx="50" cy="52" r="4.5" fill="{BLUE}" class="pulse"/>'
-                 f'<circle cx="50" cy="52" r="4.5" fill="{BLUE}"/>'
-                 f'<text x="64" y="56.5" class="mono" font-size="12" letter-spacing="1.6" fill="{MUTED}">'
+                 f'<circle cx="50" cy="62" r="4.5" fill="{BLUE}" class="pulse"/>'
+                 f'<circle cx="50" cy="62" r="4.5" fill="{BLUE}"/>'
+                 f'<text x="64" y="66.5" class="mono" font-size="12" letter-spacing="1.6" fill="{MUTED}">'
                  f'E&amp;I ENGINEERING · SGSITS INDORE · CLASS OF 2027</text></g>')
     # name, rising line by line, shine on the surname
     parts.append(f"""<defs><linearGradient id="shine" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="260" y2="0" gradientTransform="translate(-300 0)">
@@ -220,15 +257,21 @@ def hero():
 <stop offset=".58" stop-color="{INK}"/><stop offset="1" stop-color="{INK}"/>
 <animateTransform attributeName="gradientTransform" type="translate" values="-300 0;-300 0;520 0" keyTimes="0;.6;1" dur="5s" begin="1.4s" repeatCount="indefinite"/>
 </linearGradient></defs>""")
-    parts.append(f'<text x="40" y="160" class="serif rise" font-size="112" letter-spacing="-2" fill="{INK}" style="{d(0.2)}">Rajvir</text>')
-    parts.append(f'<text x="40" y="252" class="serif rise" font-size="112" letter-spacing="-2" style="{d(0.42)}">'
+    parts.append(f'<text x="40" y="172" class="serif rise" font-size="112" letter-spacing="-2" fill="{INK}" style="{d(0.2)}">Rajvir</text>')
+    parts.append(f'<text x="40" y="264" class="serif rise" font-size="112" letter-spacing="-2" style="{d(0.42)}">'
                  f'<tspan fill="url(#shine)">Gautam</tspan><tspan fill="{BLUE}">.</tspan></text>')
-    parts.append(f'<text x="44" y="298" class="sans rise" font-size="17" fill="{MUTED}" style="{d(0.7)}">'
-                 f'Final-year engineer. Building full-stack web &amp; Android apps that work.</text>')
-    # ASCII monogram, printed row by row
-    cols, rows, fs = 70, 44, 6.2
-    cw, x0, y0 = fs * 0.6, 578, 46
-    grid = ascii_monogram(cols, rows)
+    parts.append(f'<text x="44" y="312" class="sans rise" font-size="17" fill="{MUTED}" style="{d(0.7)}">'
+                 f'Final-year engineer building full-stack web &amp; Android apps.</text>')
+    # ASCII portrait (data/portrait.json) or RG monogram fallback, printed row by row
+    portrait = ROOT / "data" / os.environ.get("PORTRAIT", "portrait.json")
+    if portrait.exists():
+        grid = ascii_portrait(json.loads(portrait.read_text()))
+        fs = round(343 / len(grid), 2)  # same on-card height whatever the grid resolution
+        x0, y0 = W + 1 - len(grid[0]) * fs * 0.6, H - len(grid) * fs + 3  # bleed off right + bottom edges
+        step = 0.018
+    else:
+        grid, fs, x0, y0 = ascii_monogram(70, 44), 6.2, 578, 46
+        step = 0.03
     rows_svg = []
     for ry, row in enumerate(grid):
         runs, prev = [], None
@@ -238,9 +281,10 @@ def hero():
                 prev = kind
             runs[-1][1] += ch
         spans = "".join(f'<tspan class="{k}">{esc(s)}</tspan>' for k, s in runs)
-        rows_svg.append(f'<text x="{x0}" y="{y0 + ry * fs:.1f}" class="fade" style="{d(0.5 + ry * 0.03)}" xml:space="preserve">{spans}</text>')
+        rows_svg.append(f'<text x="{x0}" y="{y0 + ry * fs:.1f}" class="fade" style="{d(0.5 + ry * step)}" xml:space="preserve">{spans}</text>')
     parts.append(f'<g class="mono" font-size="{fs}">{"".join(rows_svg)}</g>')
-    css = f".b{{fill:{MUTED};fill-opacity:.35}} .i{{fill:{INK}}}"
+    css = f".b{{fill:{MUTED};fill-opacity:.35}} .i{{fill:{INK}}}" + "".join(
+        f" .o{n}{{fill:{INK};fill-opacity:{n / 10}}}" for n in range(3, 11))
     return svg(W, H, "\n".join(parts), [SERIF, SANS, MONO], css, "Rajvir Gautam — final-year engineer at SGSITS Indore")
 
 
